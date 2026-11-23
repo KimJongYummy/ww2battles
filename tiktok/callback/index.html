@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>WW2 Battles · TikTok sign-in</title>
+<link rel="icon" href="../../favicon.png">
+<style>
+  :root { --bg:#efe6d2; --ink:#2b2622; --red:#a3201b; --card:#f8f2e4; --line:#cbbd9f; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1d1a17; --ink:#eadfca; --red:#e0574f; --card:#2a2622; --line:#4a4238; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 Georgia, "Times New Roman", serif; }
+  main { max-width:640px; margin:0 auto; padding:32px 16px; }
+  h1 { font-size:26px; margin:0 0 8px; letter-spacing:.02em; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px; margin:16px 0; }
+  code, textarea { font:13px/1.4 Consolas, monospace; }
+  textarea { width:100%; box-sizing:border-box; min-height:96px; background:transparent; color:var(--ink);
+             border:1px solid var(--line); border-radius:4px; padding:8px; resize:vertical; word-break:break-all; }
+  button { font:inherit; background:var(--red); color:#fff; border:0; border-radius:4px; padding:8px 16px; cursor:pointer; margin-top:8px; }
+  .err { color:var(--red); font-weight:bold; }
+  .muted { opacity:.75; font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>WW2 Battles · TikTok sign-in</h1>
+  <div id="status" class="card">Reading the sign-in result…</div>
+  <div id="manual" class="card" hidden>
+    <p>If the uploader didn't pick this up by itself, copy this command and run it in the <code>ww2-shorts</code> folder:</p>
+    <textarea id="cmd" readonly></textarea>
+    <button id="copy" type="button">Copy command</button>
+    <p class="muted">The code works once and expires in a few minutes. It is useless without the app's secret key, which never leaves your PC.</p>
+  </div>
+  <p class="muted">This page only reads the address bar. It loads nothing from other sites and sends nothing anywhere, except to your own PC (127.0.0.1) when the uploader is waiting for it.</p>
+</main>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var status = document.getElementById("status");
+  var manual = document.getElementById("manual");
+  var cmd = document.getElementById("cmd");
+  if (q.get("error")) {
+    status.innerHTML = '<span class="err">TikTok returned an error:</span> ' +
+      String(q.get("error")).replace(/[<>&]/g, "") + " " + String(q.get("error_description") || "").replace(/[<>&]/g, "");
+    return;
+  }
+  if (!q.get("code")) {
+    status.textContent = "No sign-in code in the address. Start again with: python tools/tiktok.py setup";
+    return;
+  }
+  cmd.value = 'python tools/tiktok.py code "' + location.href + '"';
+  manual.hidden = false;
+  document.getElementById("copy").onclick = function () {
+    cmd.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(cmd.value) : Promise.reject()).catch(function () { document.execCommand("copy"); });
+    this.textContent = "Copied";
+  };
+  // state starting with "L" = tools/tiktok.py setup is listening on this PC; hand the code straight to it.
+  var state = q.get("state") || "";
+  if (state.charAt(0) === "L") {
+    status.textContent = "Signed in. Handing the code to the uploader on this PC…";
+    setTimeout(function () { location.href = "http://127.0.0.1:8723/callback/" + location.search; }, 600);
+  } else {
+    status.textContent = "Signed in with TikTok.";
+  }
+})();
+</script>
+</body>
+</html>
